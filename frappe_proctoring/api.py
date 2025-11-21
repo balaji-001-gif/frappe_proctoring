@@ -1,16 +1,19 @@
 import frappe
-from frappe_proctoring.frappe_proctoring.utils.camera import ProctoringSession
 from werkzeug.wrappers import Response
 
 # Global session store (simple implementation for single user/session)
-# In a real app, this should be managed per user/session ID
 session_store = {}
 
 @frappe.whitelist()
 def start_proctoring():
+    from frappe_proctoring.frappe_proctoring.utils.camera import ProctoringSession
     user = frappe.session.user
     if user not in session_store:
-        session_store[user] = ProctoringSession()
+        try:
+            session_store[user] = ProctoringSession()
+        except Exception as e:
+            frappe.log_error(f"Proctoring Error: {str(e)}")
+            return f"Error starting session: {str(e)}"
     return "Started"
 
 @frappe.whitelist()

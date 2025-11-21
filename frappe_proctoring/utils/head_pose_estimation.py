@@ -97,17 +97,32 @@ camera_matrix = np.array(
 def get_model_path(path):
     return os.path.join(os.path.dirname(__file__), path)
 
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(get_model_path("shape_predictor_model/shape_predictor_68_face_landmarks.dat"))
+detector = None
+predictor = None
 
+def load_models():
+    global detector, predictor
+    if detector is None:
+        try:
+            detector = dlib.get_frontal_face_detector()
+            model_path = get_model_path("shape_predictor_model/shape_predictor_68_face_landmarks.dat")
+            if not os.path.exists(model_path) or os.path.getsize(model_path) < 1000000:
+                return False
+            predictor = dlib.shape_predictor(model_path)
+        except:
+            return False
+    return True
+    
 # while True:
 #     ret, img = cap.read()
 #     if ret == True:
     
 def head_pose_detection(faces, img):
+    if not load_models() or not predictor:
+        return "Model Error"
 
     for face in faces:
-        marks = shapePredictor(img, face)
+        marks = predictor(img, face)
 
         image_points = np.array([
             [marks.part(30).x, marks.part(30).y],    #Nose tip

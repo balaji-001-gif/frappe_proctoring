@@ -9,11 +9,29 @@ import frappe
 def get_model_path(path):
     return os.path.join(os.path.dirname(__file__), path)
 
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(get_model_path("shape_predictor_model/shape_predictor_68_face_landmarks.dat"))
+detector = None
+predictor = None
 
+def load_models():
+    global detector, predictor
+    if detector is None:
+        try:
+            detector = dlib.get_frontal_face_detector()
+            model_path = get_model_path("shape_predictor_model/shape_predictor_68_face_landmarks.dat")
+            if not os.path.exists(model_path) or os.path.getsize(model_path) < 1000000: # Check if < 1MB (likely a git lfs pointer)
+                print(f"WARNING: Model file missing or invalid (Git LFS issue?): {model_path}")
+                return False
+            predictor = dlib.shape_predictor(model_path)
+        except Exception as e:
+            print(f"Error loading facial detection models: {e}")
+            return False
+    return True
 
 def detectFace(frame):
+    if not load_models() or not predictor:
+        return 0, []
+    
+    # ... rest of the function ...
     """
     Input: It will receive a video frame, from the front camera
     Output: Returns the counts of faces (detect all the faces and localize them) detected by the dlib's face detector

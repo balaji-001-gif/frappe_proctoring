@@ -6,22 +6,42 @@ import os
 def get_model_path(path):
     return os.path.join(os.path.dirname(__file__), path)
 
-#net has the YOLO loaded
-net = cv2.dnn.readNet(get_model_path("object_detection_model/yolov3.weights"), get_model_path("object_detection_model/yolov3.cfg"))
-
-#classes that we have to detect using Object Detection Model
+net = None
 classes = []
 
-with open(get_model_path("object_detection_model/coco.names"), "r") as f:
-    classes = [line.strip() for line in f.readlines()]
+def load_models():
+    global net, classes
+    if net is None:
+        try:
+            weights = get_model_path("object_detection_model/yolov3.weights")
+            cfg = get_model_path("object_detection_model/yolov3.cfg")
+            names = get_model_path("object_detection_model/coco.names")
+            
+            if not os.path.exists(weights) or not os.path.exists(cfg):
+                return False
 
-layer_names = net.getLayerNames()
-# print(type(layer_names))
-# layer_names = [i for i in layer_names]
-# print(type(layer_names))
-output_layers = [layer_names[layer-1] for layer in net.getUnconnectedOutLayers()]
+            net = cv2.dnn.readNet(weights, cfg)
+            with open(names, "r") as f:
+                classes = [line.strip() for line in f.readlines()]
+            
+            # Define output_layers after net is loaded
+            layer_names = net.getLayerNames()
+            output_layers = [layer_names[layer[0] - 1] for layer in net.getUnconnectedOutLayers()]
 
-colors = np.random.uniform(0,255,size=(len(label_classes),3))
+        except Exception as e: # Catch specific exception for better debugging
+            print(f"Error loading models: {e}")
+            return False
+    return True
+
+# The original global definitions for layer_names and output_layers are moved inside load_models
+# layer_names = net.getLayerNames()
+# # print(type(layer_names))
+# # layer_names = [i for i in layer_names]
+# # print(type(layer_names))
+# output_layers = [layer_names[layer-1] for layer in net.getUnconnectedOutLayers()]
+
+# Assuming label_classes should be 'classes' from coco.names
+colors = np.random.uniform(0,255,size=(len(classes),3))
 
 font = cv2.FONT_HERSHEY_PLAIN
 start_time = time.time()
@@ -29,11 +49,14 @@ frame_id = 0
 
 def detectObject(frame):
 
+    if not load_models() or net is None or output_layers is None:
+        return []
+
     labels_this_frame = []
 
-    height, width, channels = frame.shape
+    height, width, _ = frame.shape
 
-    blob = cv2.dnn.blobFromImage(frame, 0.00392, (220,220), (0,0,0), True, crop=False)
+    blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), (0,0,0), swapRB=True, crop=False)
 
     #Feeding Blob as an input to our Yolov3-tiny model
     net.setInput(blob)
