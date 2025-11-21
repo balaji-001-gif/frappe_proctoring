@@ -1,0 +1,7 @@
+{
+    "custom": 1,
+    "icon": "fa fa-video-camera",
+    "label": "Proctoring",
+    "link": "frappe_proctoring.frappe_proctoring.module.Proctoring",
+    "type": "module"
+}
