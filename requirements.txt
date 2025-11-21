@@ -1,7 +1,5 @@
-opencv-python
+opencv-python-headless
 dlib
 imutils
 numpy
 scipy
-flask-cors
-mysql-connector-python

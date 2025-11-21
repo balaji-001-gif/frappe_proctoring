@@ -1,9 +1,18 @@
 from setuptools import setup, find_packages
+import os
 
 with open("requirements.txt") as f:
 	install_requires = f.read().strip().split("\n")
 
-from frappe_proctoring import __version__ as version
+version = "0.0.1"
+try:
+	with open(os.path.join("frappe_proctoring", "__init__.py")) as f:
+		for line in f:
+			if line.startswith("__version__"):
+				version = line.split("=")[1].strip().strip('"').strip("'")
+				break
+except:
+	pass
 
 setup(
 	name="frappe_proctoring",
