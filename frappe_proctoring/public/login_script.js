@@ -20,20 +20,20 @@ var email,
     signupPassword,
     confirmSignUpPassword;
 
-createacctbtn.addEventListener("click", function(){
+createacctbtn.addEventListener("click", function () {
     var isVerified = true;
 
     signupEmail = signupEmailIn.value;
     signupPassword = signupPasswordIn.value;
     confirmSignUpPassword = confirmSignUpPasswordIn.value;
 
-    if (signupPassword != confirmSignUpPassword){
+    if (signupPassword != confirmSignUpPassword) {
         window.alert("Password fields do not match. Try again.");
         isVerified = false;
     }
 
     username = usernameIn.value;
-    if (!signupEmail || !signupPassword || !confirmSignUpPassword){
+    if (!signupEmail || !signupPassword || !confirmSignUpPassword) {
         window.alert("Please fill put all required fields.");
         isVerified = false;
     }
@@ -44,27 +44,27 @@ createacctbtn.addEventListener("click", function(){
         signupPassword: signupPassword
     }
     // console.log(data)
-    if (isVerified){
+    if (isVerified) {
         var url = 'http://127.0.0.1:5000/signup_data';
         fetch(url, {
             method: 'POST', // or 'PUT'
-            headers:{
+            headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(data) // data can be `string` or {object}!
         })
-        .then(res => res.json())
-        .then(data => console.log('Success:', window.alert(JSON.stringify(data))))
-        .catch(error => console.error('Error:', error));
+            .then(res => res.json())
+            .then(data => console.log('Success:', window.alert(JSON.stringify(data))))
+            .catch(error => console.error('Error:', error));
     }
 });
 
-submitButton.addEventListener("click", function(){
+submitButton.addEventListener("click", function () {
     var isVerified = true;
     email = emailInput.value;
     password = passwordInput.value;
 
-    if (!email || !password){
+    if (!email || !password) {
         window.alert("Please fill put all required fields.")
         isVerified = false;
     }
@@ -74,26 +74,22 @@ submitButton.addEventListener("click", function(){
         password: password
     }
 
-    if (isVerified){
-        var url = 'http://127.0.0.1:5000/login_data';
-        fetch(url, {
-            method: 'POST', // or 'PUT'
-            headers:{
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data) // data can be `string` or {object}!
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data == true){
-                console.log('Done, Login Credentials matched.');
-                window.location.replace("./quiz_html");
-            }
-            else{
-                window.alert("Login credentials doesn't with our database.")
-            }
+    if (isVerified) {
+        if (isVerified) {
+            // Mock login for now
+            console.log('Done, Login Credentials matched.');
+            window.location.replace("/quiz");
+
+            /* 
+            var url = '/api/method/frappe_proctoring.frappe_proctoring.api.login_data';
+            fetch(url, { ... }) 
+            */
+        }
+        else {
+            window.alert("Login credentials doesn't with our database.")
+        }
     })
-        .catch(error => console.error('Error:', error));
+    .catch(error => console.error('Error:', error));
     }
 });
 
