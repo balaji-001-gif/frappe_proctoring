@@ -13,18 +13,28 @@ This is a Frappe Application that integrates an AI-based proctoring system. It u
 
 ## Installation
 
-1.  **Get the App**:
+1.  **System Dependencies**:
+    You must have `cmake` installed to build `dlib`.
     ```bash
-    bench get-app https://github.com/balaji-001-gif/AI_Proctor_BK.git
+    # On Ubuntu/Debian
+    sudo apt-get update
+    sudo apt-get install cmake build-essential
+    
+    # On macOS
+    brew install cmake
     ```
 
-2.  **Install the App**:
+2.  **Get the App**:
+    ```bash
+    bench get-app https://github.com/balaji-001-gif/frappe_proctoring.git
+    ```
+
+3.  **Install the App**:
     ```bash
     bench --site [your-site-name] install-app frappe_proctoring
     ```
 
-3.  **Install Python Dependencies**:
-    This app requires several system-level dependencies for `dlib` and `opencv`. Ensure you have `cmake` installed.
+4.  **Install Python Dependencies**:
     ```bash
     ./env/bin/pip install -r apps/frappe_proctoring/requirements.txt
     ```
