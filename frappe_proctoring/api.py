@@ -51,3 +51,37 @@ def video_feed():
                 break
 
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@frappe.whitelist()
+def process_frame(image_data):
+    import base64
+    import cv2
+    import numpy as np
+    from frappe_proctoring.frappe_proctoring.utils.camera import ProctoringSession
+
+    user = frappe.session.user
+    if user not in session_store:
+        # Auto-start session if not exists
+        try:
+            session_store[user] = ProctoringSession()
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    session = session_store[user]
+    
+    try:
+        # Decode base64 image
+        header, encoded = image_data.split(",", 1)
+        data = base64.b64decode(encoded)
+        nparr = np.frombuffer(data, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        # Process frame (using existing logic)
+        # We need to adapt ProctoringSession to accept an external frame
+        # For now, we'll just run the detections directly or add a method to ProctoringSession
+        
+        result = session.process_external_frame(frame)
+        return {"status": "success", "analysis": result}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
