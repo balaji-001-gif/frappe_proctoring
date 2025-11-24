@@ -1,17 +1,33 @@
 // Initialize proctoring when DOM is ready
 (function () {
+    console.log("[Proctoring] Script loaded, current URL:", window.location.pathname);
+
     function checkAndInit() {
-        // Check if we are on an LMS Quiz page
-        if (window.location.pathname.includes("/quiz/") ||
-            window.location.pathname.includes("/lms/quiz/")) {
+        console.log("[Proctoring] Checking if on quiz page...");
+        console.log("[Proctoring] Current pathname:", window.location.pathname);
+
+        // Check if we are on an LMS Quiz page - more flexible matching
+        const isQuizPage = window.location.pathname.includes("/quiz") ||
+            window.location.pathname.includes("/lms/") ||
+            document.querySelector('[data-quiz-name]') !== null ||
+            document.querySelector('.quiz-submission') !== null;
+
+        console.log("[Proctoring] Is quiz page?", isQuizPage);
+
+        if (isQuizPage) {
+            console.log("[Proctoring] Quiz page detected, initializing...");
             initProctoring();
+        } else {
+            console.log("[Proctoring] Not a quiz page, skipping initialization");
         }
     }
 
     // Wait for DOM to be ready
     if (document.readyState === 'loading') {
+        console.log("[Proctoring] Waiting for DOM...");
         document.addEventListener('DOMContentLoaded', checkAndInit);
     } else {
+        console.log("[Proctoring] DOM already ready");
         checkAndInit();
     }
 })();
