@@ -1,10 +1,20 @@
-frappe.ready(function () {
-    // Check if we are on an LMS Quiz page
-    // This is a heuristic; might need adjustment based on exact LMS URL structure
-    if (window.location.pathname.includes("/quiz/")) {
-        initProctoring();
+// Initialize proctoring when DOM is ready
+(function () {
+    function checkAndInit() {
+        // Check if we are on an LMS Quiz page
+        if (window.location.pathname.includes("/quiz/") ||
+            window.location.pathname.includes("/lms/quiz/")) {
+            initProctoring();
+        }
     }
-});
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkAndInit);
+    } else {
+        checkAndInit();
+    }
+})();
 
 function initProctoring() {
     console.log("Initializing Proctoring...");
@@ -41,11 +51,15 @@ function initProctoring() {
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function (stream) {
                 videoElement.srcObject = stream;
-                startFrameTransmission(videoElement);
+                startFrameTransmission(videoElement, statusText);
             })
             .catch(function (error) {
                 console.error("Error accessing camera:", error);
-                frappe.msgprint("Error accessing camera. Proctoring is required for this quiz.");
+                if (typeof frappe !== 'undefined' && frappe.msgprint) {
+                    frappe.msgprint("Error accessing camera. Proctoring is required for this quiz.");
+                } else {
+                    alert("Error accessing camera. Proctoring is required for this quiz.");
+                }
                 statusText.innerText = "Camera Blocked";
                 statusText.style.color = 'red';
             });
@@ -55,7 +69,7 @@ function initProctoring() {
     }
 }
 
-function startFrameTransmission(videoElement) {
+function startFrameTransmission(videoElement, statusText) {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
 
@@ -68,20 +82,45 @@ function startFrameTransmission(videoElement) {
 
             const dataURL = canvas.toDataURL('image/jpeg', 0.5); // Compress quality 0.5
 
-            frappe.call({
-                method: 'frappe_proctoring.frappe_proctoring.api.process_frame',
-                args: {
-                    image_data: dataURL
-                },
-                callback: function (r) {
-                    if (r.message) {
-                        console.log("Proctoring Status:", r.message);
+            // Use fetch API if frappe is not available
+            if (typeof frappe !== 'undefined' && frappe.call) {
+                frappe.call({
+                    method: 'frappe_proctoring.frappe_proctoring.api.process_frame',
+                    args: {
+                        image_data: dataURL
+                    },
+                    callback: function (r) {
+                        if (r.message) {
+                            console.log("Proctoring Status:", r.message);
+                        }
+                    },
+                    error: function (r) {
+                        console.log("Proctoring Error:", r);
+                        statusText.innerText = "Connection Error";
+                        statusText.style.color = 'orange';
                     }
-                },
-                error: function (r) {
-                    console.log("Proctoring Error:", r);
-                }
-            });
+                });
+            } else {
+                // Fallback to fetch API
+                fetch('/api/method/frappe_proctoring.frappe_proctoring.api.process_frame', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image_data: dataURL
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Proctoring Status:", data);
+                    })
+                    .catch(error => {
+                        console.log("Proctoring Error:", error);
+                        statusText.innerText = "Connection Error";
+                        statusText.style.color = 'orange';
+                    });
+            }
         }
     }, 3000);
 }
