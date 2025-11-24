@@ -6,9 +6,11 @@
         console.log("[Proctoring] Checking if on quiz page...");
         console.log("[Proctoring] Current pathname:", window.location.pathname);
 
-        // Check if we are on an LMS Quiz page - more flexible matching
-        const isQuizPage = window.location.pathname.includes("/quiz") ||
-            window.location.pathname.includes("/lms/") ||
+        // Check if we are on an LMS Quiz page
+        // Match patterns: /lms/quiz/, /Lms/quiz/, or any case variation
+        const pathname = window.location.pathname.toLowerCase();
+        const isQuizPage = pathname.includes("/lms/quiz") ||
+            pathname.includes("/quiz/") ||
             document.querySelector('[data-quiz-name]') !== null ||
             document.querySelector('.quiz-submission') !== null;
 

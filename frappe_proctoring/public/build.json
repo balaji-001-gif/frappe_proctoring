@@ -1,0 +1,7 @@
+{
+    "js": {
+        "lms_proctoring.bundle.js": [
+            "public/js/lms_proctoring.js"
+        ]
+    }
+}

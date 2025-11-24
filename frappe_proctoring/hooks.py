@@ -9,10 +9,15 @@ app_license = "MIT"
 # ------------------
 
 # include js, css files in header of desk.html
-# include js, css files in header of desk.html
 # app_include_css = "/assets/frappe_proctoring/css/frappe_proctoring.css"
-app_include_js = "/assets/frappe_proctoring/js/lms_proctoring.js"
-web_include_js = "/assets/frappe_proctoring/js/lms_proctoring.js"
+app_include_js = [
+    "/assets/frappe_proctoring/js/lms_proctoring.bundle.js"
+]
+
+# include js, css files in header of web template
+web_include_js = [
+    "/assets/frappe_proctoring/js/lms_proctoring.bundle.js"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/frappe_proctoring/css/frappe_proctoring.css"
