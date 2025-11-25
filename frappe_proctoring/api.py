@@ -85,3 +85,45 @@ def process_frame(image_data):
         
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@frappe.whitelist()
+def process_screen_frame(image_data):
+    import base64
+    import cv2
+    import numpy as np
+    import os
+    import time
+
+    user = frappe.session.user
+    if user == 'Guest':
+        return {"status": "error", "message": "Not logged in"}
+
+    try:
+        # Decode base64 image
+        header, encoded = image_data.split(",", 1)
+        data = base64.b64decode(encoded)
+        nparr = np.frombuffer(data, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        # Save screen capture to disk (for now)
+        # In a real app, you might want to save to File DocType or Object Storage
+        site_path = frappe.utils.get_site_path()
+        capture_dir = os.path.join(site_path, 'public', 'files', 'proctoring_screens', user)
+        if not os.path.exists(capture_dir):
+            os.makedirs(capture_dir)
+        
+        timestamp = int(time.time())
+        filename = f"screen_{timestamp}.jpg"
+        filepath = os.path.join(capture_dir, filename)
+        
+        cv2.imwrite(filepath, frame)
+        
+        # Log the capture
+        # frappe.log_error(f"Screen captured for {user} at {filepath}", "Screen Capture")
+
+        return {"status": "success", "file": filename}
+
+    except Exception as e:
+        frappe.log_error(f"Screen Capture Error: {str(e)}")
+        return {"status": "error", "message": str(e)}
+

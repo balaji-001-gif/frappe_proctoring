@@ -227,14 +227,187 @@ window.addEventListener('screenshotTaken', function (e) {
     e.preventDefault();
 });
 
-// Disable screen recording
-window.addEventListener('beforeunload', function (e) {
-    var mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = function (e) {
-        // Handle data
-    };
-    mediaRecorder.onstop = function () {
-        // Handle recording stop
-    };
-    mediaRecorder.stop();
+// Screen Capture Logic
+let screenStream = null;
+
+async function startScreenCapture() {
+    try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: { cursor: "always" },
+            audio: false
+        });
+
+        const videoTrack = screenStream.getVideoTracks()[0];
+
+        videoTrack.onended = () => {
+            console.log("Screen sharing stopped by user");
+            alert("Screen sharing is required for this exam. Please restart screen sharing.");
+            // Optionally redirect or block exam
+        };
+
+        // Start sending frames
+        sendScreenFrames(screenStream);
+
+    } catch (err) {
+        console.error("Error: " + err);
+        alert("You must grant screen sharing permissions to take this exam.");
+    }
+}
+
+async function sendScreenFrames(stream) {
+    const track = stream.getVideoTracks()[0];
+    const imageCapture = new ImageCapture(track);
+
+    const intervalId = setInterval(async () => {
+        if (track.readyState === 'ended') {
+            clearInterval(intervalId);
+            return;
+        }
+
+        try {
+            const bitmap = await imageCapture.grabFrame();
+            const canvas = document.createElement('canvas');
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const context = canvas.getContext('2d');
+            context.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
+
+            const base64Image = canvas.toDataURL('image/jpeg', 0.5); // Compress to 0.5 quality
+
+            // Send to backend
+            fetch('/api/method/frappe_proctoring.frappe_proctoring.api.process_screen_frame', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Frappe-CSRF-Token': frappe.csrf_token
+                },
+                body: JSON.stringify({
+                    image_data: base64Image
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message && data.message.status === 'error') {
+                        console.error("Server error processing screen frame:", data.message.message);
+                    }
+                })
+                .catch(error => console.error('Error sending screen frame:', error));
+
+        } catch (error) {
+            console.error('Error capturing screen frame:', error);
+        }
+    }, 5000); // Capture every 5 seconds
+}
+
+// State tracking for proctoring
+let isCameraActive = false;
+let isScreenActive = false;
+
+// Disable start button initially
+start_btn.disabled = true;
+start_btn.classList.add("disabled"); // Add a disabled class for styling if needed
+start_btn.innerText = "Waiting for Camera & Screen...";
+
+function checkProctoringStatus() {
+    if (isCameraActive && isScreenActive) {
+        start_btn.disabled = false;
+        start_btn.classList.remove("disabled");
+        start_btn.innerText = "Start Quiz";
+    }
+}
+
+// Auto-start proctoring on load
+window.addEventListener('load', async () => {
+    console.log("Auto-starting proctoring...");
+
+    // 1. Start Camera
+    // Note: The original code had 'camOpen' which seemed to be a selector. 
+    // We need to ensure the camera logic is actually triggered.
+    // Assuming there is a 'cameraStart()' function or similar that was commented out or implicit.
+    // If not, we need to implement a basic camera start here or call the existing one.
+    // Looking at previous code, 'camOpen' was just a selector.
+    // Let's implement a basic camera start if it's missing or use the existing one if found.
+
+    try {
+        await startCamera();
+    } catch (e) {
+        console.error("Camera start failed", e);
+        alert("Camera access is required. Please allow camera access.");
+    }
+
+    // 2. Start Screen Capture
+    try {
+        await startScreenCapture();
+    } catch (e) {
+        console.error("Screen capture start failed", e);
+        // Alert is already handled in startScreenCapture
+    }
 });
+
+async function startCamera() {
+    // Basic camera implementation if not present
+    // This connects to the video element with class 'camera' if it exists
+    const videoElement = document.querySelector(".camera video") || document.querySelector("video");
+
+    if (navigator.mediaDevices.getUserMedia) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            if (videoElement) {
+                videoElement.srcObject = stream;
+            }
+            isCameraActive = true;
+            checkProctoringStatus();
+
+            // Start sending camera frames if needed (similar to screen frames)
+            // For now, we assume the backend handles the stream or we just need it active.
+            // If we need to send frames like screen capture:
+            // sendCameraFrames(stream); 
+
+        } catch (error) {
+            console.error("Something went wrong with camera!", error);
+            throw error;
+        }
+    }
+}
+
+// Modify startScreenCapture to update state
+const originalStartScreenCapture = startScreenCapture;
+startScreenCapture = async function () {
+    try {
+        // Call original logic
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: { cursor: "always" },
+            audio: false
+        });
+
+        const videoTrack = screenStream.getVideoTracks()[0];
+
+        videoTrack.onended = () => {
+            console.log("Screen sharing stopped by user");
+            alert("Screen sharing is required. Please refresh and share screen.");
+            isScreenActive = false;
+            start_btn.disabled = true;
+            start_btn.innerText = "Screen Share Stopped";
+        };
+
+        // Start sending frames
+        sendScreenFrames(screenStream);
+
+        // Update state
+        isScreenActive = true;
+        checkProctoringStatus();
+
+    } catch (err) {
+        console.error("Error: " + err);
+        alert("You must grant screen sharing permissions.");
+        isScreenActive = false;
+    }
+}
+
+// Original start button handler (only starts quiz now)
+start_btn.onclick = () => {
+    info_box.classList.add("activeInfo"); //show info box
+    // camOpen; // This line was useless
+};
+
+
